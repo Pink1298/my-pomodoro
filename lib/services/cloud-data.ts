@@ -70,6 +70,22 @@ export const CloudDataService = {
         }
     },
 
+    async deleteTasks(ids: string[], userId: string) {
+        const supabase = createClient();
+        if (!ids.length) return;
+
+        const { error } = await supabase
+            .from('tasks')
+            .delete()
+            .in('id', ids)
+            .eq('user_id', userId);
+
+        if (error) {
+            console.error("Error deleting tasks:", error);
+            throw error;
+        }
+    },
+
     // --- Projects ---
     async fetchProjects(userId: string): Promise<Project[]> {
         const supabase = createClient();
@@ -100,6 +116,22 @@ export const CloudDataService = {
 
         const { error } = await supabase.from('projects').upsert(dbProjects);
         if (error) throw error;
+    },
+
+    async deleteProjects(ids: string[], userId: string) {
+        const supabase = createClient();
+        if (!ids.length) return;
+
+        const { error } = await supabase
+            .from('projects')
+            .delete()
+            .in('id', ids)
+            .eq('user_id', userId);
+
+        if (error) {
+            console.error("Error deleting projects:", error);
+            throw error;
+        }
     },
 
     // --- Settings ---

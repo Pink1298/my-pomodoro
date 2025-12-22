@@ -80,6 +80,8 @@ interface TaskState {
     tasks: Task[];
     projects: Project[];
     activeTaskId: string | null;
+    deletedTaskIds: string[];
+    deletedProjectIds: string[];
 
     // Tasks
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completedPomodoros' | 'subtasks'>) => void;
@@ -98,6 +100,8 @@ interface TaskState {
     addProject: (project: Omit<Project, 'id'>) => void;
     deleteProject: (id: string) => void;
     setProjects: (projects: Project[]) => void;
+    clearDeletedTaskIds: (ids: string[]) => void;
+    clearDeletedProjectIds: (ids: string[]) => void;
     resetState: () => void;
 }
 
@@ -109,6 +113,8 @@ export const useTaskStore = create<TaskState>()(
                 { id: 'default', name: 'Inbox', color: '#64748b' }
             ],
             activeTaskId: null,
+            deletedTaskIds: [],
+            deletedProjectIds: [],
 
             addTask: (taskData) =>
                 set((state) => ({
@@ -144,6 +150,7 @@ export const useTaskStore = create<TaskState>()(
                 set((state) => ({
                     tasks: state.tasks.filter((t) => t.id !== id),
                     activeTaskId: state.activeTaskId === id ? null : state.activeTaskId,
+                    deletedTaskIds: [...state.deletedTaskIds, id]
                 })),
             setActiveTask: (id) => set({ activeTaskId: id }),
             incrementTaskPomodoro: (id) =>
@@ -192,14 +199,24 @@ export const useTaskStore = create<TaskState>()(
                 // Determine what to do with tasks in deleted project - move to default?
                 set((state) => ({
                     projects: state.projects.filter(p => p.id !== id),
-                    tasks: state.tasks.map(t => t.projectId === id ? { ...t, projectId: 'default' } : t)
+                    tasks: state.tasks.map(t => t.projectId === id ? { ...t, projectId: 'default' } : t),
+                    deletedProjectIds: [...state.deletedProjectIds, id]
                 }));
             },
+
             setProjects: (projects) => set({ projects }),
+            clearDeletedTaskIds: (ids) => set((state) => ({
+                deletedTaskIds: state.deletedTaskIds.filter(id => !ids.includes(id))
+            })),
+            clearDeletedProjectIds: (ids) => set((state) => ({
+                deletedProjectIds: state.deletedProjectIds.filter(id => !ids.includes(id))
+            })),
             resetState: () => set({
                 tasks: [],
                 projects: [{ id: 'default', name: 'Inbox', color: '#64748b' }],
-                activeTaskId: null
+                activeTaskId: null,
+                deletedTaskIds: [],
+                deletedProjectIds: []
             }),
         }),
         {

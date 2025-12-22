@@ -9,7 +9,12 @@ import { DataMigrationService } from "@/lib/services/data-migration";
 
 export function SyncManager() {
     const supabase = createClient();
-    const { tasks, setTasks, projects, setProjects } = useTaskStore();
+    const {
+        tasks, setTasks,
+        projects, setProjects,
+        deletedTaskIds, clearDeletedTaskIds,
+        deletedProjectIds, clearDeletedProjectIds
+    } = useTaskStore();
     const { settings, updateSettings } = useTimerStore();
     const { sessions, dailyStreak, lastFocusDate, journal, hydrateStats } = useStatsStore();
 
@@ -102,6 +107,19 @@ export function SyncManager() {
         return () => clearTimeout(t);
     }, [tasks, supabase]);
 
+    // Tasks Deletion
+    useEffect(() => {
+        if (!deletedTaskIds.length) return;
+        const pushDelete = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                await CloudDataService.deleteTasks(deletedTaskIds, user.id);
+                clearDeletedTaskIds(deletedTaskIds);
+            }
+        };
+        pushDelete();
+    }, [deletedTaskIds, supabase, clearDeletedTaskIds]);
+
     // Projects Push
     useEffect(() => {
         if (!projects.length) return;
@@ -114,6 +132,19 @@ export function SyncManager() {
         const t = setTimeout(push, 2000);
         return () => clearTimeout(t);
     }, [projects, supabase]);
+
+    // Projects Deletion
+    useEffect(() => {
+        if (!deletedProjectIds.length) return;
+        const pushDelete = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                await CloudDataService.deleteProjects(deletedProjectIds, user.id);
+                clearDeletedProjectIds(deletedProjectIds);
+            }
+        };
+        pushDelete();
+    }, [deletedProjectIds, supabase, clearDeletedProjectIds]);
 
     // Settings Push
     useEffect(() => {
