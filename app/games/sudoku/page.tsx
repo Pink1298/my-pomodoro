@@ -21,14 +21,13 @@ export default function SudokuPage() {
     const [initialBoard, setInitialBoard] = useState<number[][]>([]);
     const [board, setBoard] = useState<number[][]>([]);
     const [solution, setSolution] = useState<number[][]>([]);
-    const [notes, setNotes] = useState<number[][][]>([]); // 9x9 grid of arrays
+    const [notes, setNotes] = useState<number[][][]>([]);
 
     // UI State
     const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
     const [mistakes, setMistakes] = useState(0);
     const [isWon, setIsWon] = useState(false);
     const [isPencilMode, setIsPencilMode] = useState(false);
-    const [history, setHistory] = useState<number[][][]>([]); // Simple undo history
 
     // Initialize Game
     useEffect(() => {
@@ -41,7 +40,6 @@ export default function SudokuPage() {
         setBoard(JSON.parse(JSON.stringify(initial)));
         setSolution(sol);
 
-        // Init empty notes grid
         const emptyNotes = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => []));
         setNotes(emptyNotes);
 
@@ -74,23 +72,20 @@ export default function SudokuPage() {
             setNotes(newNotes);
         } else {
             // Enter Number
+            const newBoard = [...board];
+            newBoard[r][c] = num;
+            setBoard(newBoard);
 
-            // Validate immediately (Game Design Choice: Instant feedback)
-            if (num === solution[r][c]) {
-                const newBoard = [...board];
-                newBoard[r][c] = num;
-                setBoard(newBoard);
+            // Clear notes
+            const newNotes = [...notes];
+            newNotes[r][c] = [];
+            setNotes(newNotes);
 
-                // Clear notes in this row/col/block for this number?
-                // For now, simpler: just clear notes in this specific cell
-                const newNotes = [...notes];
-                newNotes[r][c] = [];
-                setNotes(newNotes);
-
-                // Check Win
-                checkWin(newBoard);
-            } else {
+            // Check correctness logic
+            if (num !== solution[r][c]) {
                 setMistakes(m => m + 1);
+            } else {
+                checkWin(newBoard);
             }
         }
     };
@@ -104,7 +99,6 @@ export default function SudokuPage() {
         newBoard[r][c] = BLANK;
         setBoard(newBoard);
 
-        // Also clear notes?
         const newNotes = [...notes];
         newNotes[r][c] = [];
         setNotes(newNotes);
@@ -113,13 +107,12 @@ export default function SudokuPage() {
     const checkWin = (currentBoard: number[][]) => {
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
-                if (currentBoard[i][j] === BLANK) return;
+                if (currentBoard[i][j] !== solution[i][j]) return;
             }
         }
         setIsWon(true);
     };
 
-    // Keyboard support
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (isWon) return;
@@ -128,7 +121,6 @@ export default function SudokuPage() {
             if (key === 'Backspace' || key === 'Delete') handleErase();
             if (key === 'p') setIsPencilMode(!isPencilMode);
 
-            // Arrow Navigation
             if (!selectedCell) return;
             const [r, c] = selectedCell;
             if (key === 'ArrowUp') setSelectedCell([Math.max(0, r - 1), c]);
@@ -138,12 +130,10 @@ export default function SudokuPage() {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedCell, isPencilMode, isWon, board]); // eslint-disable-line react-hooks/exhaustive-deps
-
+    }, [selectedCell, isPencilMode, isWon, board]);
 
     return (
         <div className="container mx-auto p-4 lg:p-8 max-w-lg min-h-screen flex flex-col items-center">
-            {/* Header */}
             <div className="w-full flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
                     <Link href="/games">
@@ -154,7 +144,7 @@ export default function SudokuPage() {
                     <div>
                         <h1 className="text-2xl font-light text-foreground">Sudoku</h1>
                         <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">
-                            {difficulty} • Mistakes: <span className={mistakes >= 3 ? "text-red-500" : ""}>{mistakes}/3</span>
+                            {difficulty} • Mistakes: <span className={mistakes >= 3 ? "text-red-500" : ""}>{mistakes}</span>
                         </p>
                     </div>
                 </div>
@@ -174,59 +164,76 @@ export default function SudokuPage() {
                 </DropdownMenu>
             </div>
 
-            {/* Board */}
-            <div className="bg-white dark:bg-stone-900 p-1 rounded-xl shadow-xl border border-stone-200 dark:border-stone-800 select-none">
-                <div className="grid grid-cols-9 border-[3px] border-stone-800 dark:border-stone-500 rounded-lg overflow-hidden bg-stone-800 dark:bg-stone-500 gap-[1px]">
-                    {board.map((row, rIndex) => (
-                        row.map((cell, cIndex) => {
-                            const isSelected = selectedCell?.[0] === rIndex && selectedCell?.[1] === cIndex;
-                            const isInitial = initialBoard[rIndex][cIndex] !== BLANK;
-                            const cellValue = cell !== BLANK ? cell : null;
-                            const cellNotes = notes[rIndex][cIndex];
+            {/* Redesigned Board: 3x3 Block Grid */}
+            <div className="bg-black p-1 rounded-xl shadow-2xl overflow-hidden inline-block">
+                <div className="grid grid-cols-3 gap-[2px] bg-black border-[2px] border-black rounded-lg overflow-hidden">
+                    {/* Iterate 9 Blocks */}
+                    {Array.from({ length: 9 }).map((_, blockIndex) => (
+                        <div key={blockIndex} className="grid grid-cols-3 gap-[1px] bg-stone-300 dark:bg-stone-600">
+                            {/* Iterate 9 Cells in Block */}
+                            {Array.from({ length: 9 }).map((_, cellIndex) => {
+                                // Calculate Global Coordinates
+                                const r = Math.floor(blockIndex / 3) * 3 + Math.floor(cellIndex / 3);
+                                const c = (blockIndex % 3) * 3 + (cellIndex % 3);
 
-                            // Highlight Logic
-                            const isRelated = selectedCell && (selectedCell[0] === rIndex || selectedCell[1] === cIndex);
-                            const isSameNumber = selectedCell && board[selectedCell[0]][selectedCell[1]] !== BLANK && board[selectedCell[0]][selectedCell[1]] === cell;
+                                const cell = board[r]?.[c] ?? 0;
+                                const isInitial = initialBoard[r]?.[c] !== BLANK;
+                                const cellValue = cell !== BLANK ? cell : null;
+                                const cellNotes = notes[r]?.[c] || [];
 
-                            const rightBorder = (cIndex + 1) % 3 === 0 && cIndex !== 8 ? "border-r-2 border-stone-800 dark:border-stone-400" : "border-r border-stone-200 dark:border-stone-700/50";
-                            const bottomBorder = (rIndex + 1) % 3 === 0 && rIndex !== 8 ? "border-b-2 border-stone-800 dark:border-stone-400" : "border-b border-stone-200 dark:border-stone-700/50";
+                                const isSelected = selectedCell?.[0] === r && selectedCell?.[1] === c;
+                                const isError = !isInitial && cell !== BLANK && cell !== solution[r][c];
 
-                            return (
-                                <div
-                                    key={`${rIndex}-${cIndex}`}
-                                    onClick={() => handleCellClick(rIndex, cIndex)}
-                                    className={cn(
-                                        "w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center cursor-pointer transition-all duration-75 bg-white dark:bg-stone-900 relative",
-                                        rightBorder,
-                                        bottomBorder,
-                                        isRelated && !isSelected && "bg-stone-100 dark:bg-stone-800",
-                                        isSameNumber && !isSelected && "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
-                                        isSelected && "bg-primary text-primary-foreground",
-                                        isInitial ? "font-bold text-foreground" : "text-primary font-medium"
-                                    )}
-                                >
-                                    {cellValue}
+                                // Highlighting
+                                const isRelated = selectedCell && !isSelected && (
+                                    selectedCell[0] === r ||
+                                    selectedCell[1] === c ||
+                                    (Math.floor(selectedCell[0] / 3) === Math.floor(r / 3) &&
+                                        Math.floor(selectedCell[1] / 3) === Math.floor(c / 3))
+                                );
+                                const isSameNumber = selectedCell && board[selectedCell[0]][selectedCell[1]] !== BLANK && board[selectedCell[0]][selectedCell[1]] === cell;
 
-                                    {/* Notes */}
-                                    {!cellValue && cellNotes.length > 0 && (
-                                        <div className="grid grid-cols-3 gap-[1px] w-full h-full p-0.5 pointer-events-none">
-                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                                                <div key={n} className="flex items-center justify-center text-[8px] leading-none text-muted-foreground/80">
-                                                    {cellNotes.includes(n) ? n : ''}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })
+                                return (
+                                    <div
+                                        key={`${r}-${c}`}
+                                        onClick={() => handleCellClick(r, c)}
+                                        className={cn(
+                                            "w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center cursor-pointer transition-colors duration-75 relative",
+                                            // Base Background
+                                            "bg-white dark:bg-stone-900",
+                                            // Highlight Priorities
+                                            isRelated && "bg-blue-50 dark:bg-blue-900/10",
+                                            isSameNumber && !isSelected && "bg-blue-200 dark:bg-blue-800/30",
+                                            isSelected && "bg-[#3B5BDB] text-white", // Deep Blue selection
+                                            isError && !isSelected && "text-red-500 bg-red-50",
+                                            isError && isSelected && "bg-red-500 text-white",
+
+                                            // Text Styling
+                                            isInitial ? "font-bold text-foreground" : "font-semibold text-[#3B5BDB] dark:text-blue-400",
+                                            isSelected && "text-white" // Override for selected
+                                        )}
+                                    >
+                                        {cellValue}
+                                        {/* Notes */}
+                                        {!cellValue && cellNotes.length > 0 && (
+                                            <div className="grid grid-cols-3 gap-[1px] w-full h-full p-0.5 pointer-events-none">
+                                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                                                    <div key={n} className="flex items-center justify-center text-[8px] leading-none text-stone-400">
+                                                        {cellNotes.includes(n) ? n : ''}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     ))}
                 </div>
             </div>
 
             {/* Controls */}
             <div className="mt-8 w-full max-w-sm space-y-6">
-                {/* Tools */}
                 <div className="flex justify-between px-4">
                     <Button
                         variant={isPencilMode ? "default" : "secondary"}
@@ -246,7 +253,6 @@ export default function SudokuPage() {
                     </Button>
                 </div>
 
-                {/* Numpad */}
                 <div className="grid grid-cols-9 gap-1">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                         <Button
@@ -259,9 +265,18 @@ export default function SudokuPage() {
                         </Button>
                     ))}
                 </div>
+
+                {/* Legend / Status */}
+                <div className="flex justify-center gap-6 text-xs text-muted-foreground uppercase tracking-widest font-medium">
+                    <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-[#3B5BDB] rounded-sm"></div> Selected
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-red-500 rounded-sm"></div> Error
+                    </div>
+                </div>
             </div>
 
-            {/* Win Overlay */}
             {isWon && (
                 <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-card border border-border rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center space-y-6 animate-in zoom-in fade-in duration-300">
