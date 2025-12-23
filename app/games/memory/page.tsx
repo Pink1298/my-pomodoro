@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 
 // Game Config
-// 16 icons to support up to 32 cards (8x4 max, though we likely stop at 6x4 or 5x6)
 const ICONS = [
     Ghost, Heart, Star, Cloud, Moon, Sun,
     Music, Coffee, Zap, Anchor, Umbrella, Key,
@@ -26,14 +25,24 @@ interface LevelConfig {
     time: number; // seconds
 }
 
-// Define Levels
-const LEVELS: LevelConfig[] = [
-    { rows: 3, cols: 4, time: 30 },  // Level 1: 12 cards (6 pairs)
-    { rows: 4, cols: 4, time: 45 },  // Level 2: 16 cards (8 pairs)
-    { rows: 4, cols: 5, time: 60 },  // Level 3: 20 cards (10 pairs)
-    { rows: 4, cols: 6, time: 75 },  // Level 4: 24 cards (12 pairs)
-    { rows: 5, cols: 6, time: 90 },  // Level 5: 30 cards (15 pairs)
-];
+const MAX_LEVEL = 29;
+
+// Dynamic Level Generation
+const getLevelConfig = (level: number): LevelConfig => {
+    // 1-5: Standard progression
+    if (level === 1) return { rows: 3, cols: 4, time: 30 };
+    if (level === 2) return { rows: 4, cols: 4, time: 45 };
+    if (level === 3) return { rows: 4, cols: 5, time: 60 };
+    if (level === 4) return { rows: 4, cols: 6, time: 75 };
+
+    // Level 5 and beyond: Max Grid (5x6 = 30 cards)
+    const baseTime = 90;
+    // Decrease time by 2s per level after 5
+    const timePenalty = (level - 5) * 2;
+    const time = Math.max(30, baseTime - timePenalty); // Floor at 30s
+
+    return { rows: 5, cols: 6, time };
+};
 
 interface Card {
     id: number;
@@ -47,15 +56,15 @@ export default function MemoryGamePage() {
     const [level, setLevel] = useState(1);
     const [cards, setCards] = useState<Card[]>([]);
     const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
-    const [gameState, setGameState] = useState<'start' | 'playing' | 'won' | 'gameover'>('start');
+    const [gameState, setGameState] = useState<'start' | 'playing' | 'won' | 'gameover' | 'won-all'>('start');
     const [timeLeft, setTimeLeft] = useState(0);
     const [moves, setMoves] = useState(0);
 
-    const currentConfig = LEVELS[Math.min(level - 1, LEVELS.length - 1)];
+    const currentConfig = getLevelConfig(level);
 
     // Init Level
     const startLevel = useCallback((lvl: number) => {
-        const config = LEVELS[Math.min(lvl - 1, LEVELS.length - 1)];
+        const config = getLevelConfig(lvl);
         const totalCards = config.rows * config.cols;
         const pairsCount = totalCards / 2;
 
@@ -103,7 +112,6 @@ export default function MemoryGamePage() {
     const handleCardClick = (index: number) => {
         if (gameState !== 'playing') return;
 
-        // Prevent clicking if already matched, already flipped, or 2 cards already flipped
         if (
             cards[index].isMatched ||
             cards[index].isFlipped ||
@@ -149,11 +157,10 @@ export default function MemoryGamePage() {
     };
 
     const handleNextLevel = () => {
-        if (level < LEVELS.length) {
+        if (level < MAX_LEVEL) {
             startLevel(level + 1);
         } else {
-            // Replay last level or loop? Let's just replay last for now
-            startLevel(LEVELS.length);
+            setGameState('won-all');
         }
     };
 
@@ -181,7 +188,7 @@ export default function MemoryGamePage() {
                     <div>
                         <h1 className="text-2xl font-light text-foreground">Memory Match</h1>
                         <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">
-                            Level {level} • Moves: {moves}
+                            Level {level}/{MAX_LEVEL} • Moves: {moves}
                         </p>
                     </div>
                 </div>
@@ -209,10 +216,10 @@ export default function MemoryGamePage() {
                         <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
                             <Trophy className="h-8 w-8" />
                         </div>
-                        <h2 className="text-2xl font-bold">Ready to Focus?</h2>
+                        <h2 className="text-2xl font-bold">Memory Challenge</h2>
                         <p className="text-muted-foreground">
-                            Memorize the cards and find all pairs before time runs out.
-                            <br /><span className="text-xs font-mono mt-2 block">Level 1 • 30 Seconds</span>
+                            Memorize and find pairs.
+                            <br /><span className="text-xs font-mono mt-2 block">Level 1: 12 Cards • 30s</span>
                         </p>
                         <Button size="lg" className="w-full" onClick={() => startLevel(1)}>
                             Start Game <Play className="ml-2 h-4 w-4" />
@@ -235,7 +242,7 @@ export default function MemoryGamePage() {
                                         initial={{ scale: 0.8, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}
                                         transition={{ duration: 0.2 }}
-                                        className="aspect-square" // Enforce square aspect ratio on container
+                                        className="aspect-square"
                                     >
                                         <button
                                             onClick={() => handleCardClick(index)}
@@ -247,7 +254,6 @@ export default function MemoryGamePage() {
                                                     : "bg-white dark:bg-stone-800 border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-700/80 text-transparent"
                                             )}
                                         >
-                                            {/* Icon Container: Absolute to center and avoid layout shift */}
                                             <div className="flex items-center justify-center">
                                                 {(card.isFlipped || card.isMatched) && (
                                                     <motion.div
@@ -269,7 +275,7 @@ export default function MemoryGamePage() {
             )}
 
             {/* Overlays */}
-            {(gameState === 'won' || gameState === 'gameover') && (
+            {(gameState === 'won' || gameState === 'gameover' || gameState === 'won-all') && (
                 <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-card border border-border rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center space-y-6 animate-in zoom-in fade-in duration-300">
                         {gameState === 'won' ? (
@@ -277,10 +283,21 @@ export default function MemoryGamePage() {
                                 <div className="mx-auto w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 rounded-full flex items-center justify-center mb-4">
                                     <Trophy className="h-8 w-8" />
                                 </div>
-                                <h2 className="text-3xl font-bold">Level {level} Complete!</h2>
-                                <p className="text-muted-foreground">Great memory! Ready for the next challenge?</p>
+                                <h2 className="text-3xl font-bold">Level {level} Cleared!</h2>
+                                <p className="text-muted-foreground">Keep that memory sharp!</p>
                                 <Button onClick={handleNextLevel} size="lg" className="w-full">
-                                    {level < LEVELS.length ? "Next Level" : "Play Again"}
+                                    Next Level
+                                </Button>
+                            </>
+                        ) : gameState === 'won-all' ? (
+                            <>
+                                <div className="mx-auto w-16 h-16 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-full flex items-center justify-center mb-4">
+                                    <Trophy className="h-8 w-8" />
+                                </div>
+                                <h2 className="text-3xl font-bold">Memory Master! 🧠</h2>
+                                <p className="text-muted-foreground">You beat all 29 levels.</p>
+                                <Button onClick={() => startLevel(1)} size="lg" className="w-full">
+                                    Start Over
                                 </Button>
                             </>
                         ) : (
@@ -289,16 +306,23 @@ export default function MemoryGamePage() {
                                     <AlertCircle className="h-8 w-8" />
                                 </div>
                                 <h2 className="text-3xl font-bold">Time's Up!</h2>
-                                <p className="text-muted-foreground">Don't give up. Try again!</p>
+                                <p className="text-muted-foreground">Try again, stay focused.</p>
                                 <Button onClick={() => startLevel(level)} size="lg" className="w-full">
                                     Retry Level
                                 </Button>
                             </>
                         )}
 
-                        <Link href="/games" className="block w-full">
-                            <Button variant="ghost" className="w-full">Exit to Menu</Button>
-                        </Link>
+                        {(gameState !== 'won' && gameState !== 'won-all') && (
+                            <Link href="/games" className="block w-full">
+                                <Button variant="ghost" className="w-full">Exit to Menu</Button>
+                            </Link>
+                        )}
+                        {gameState === 'won-all' && (
+                            <Link href="/games" className="block w-full">
+                                <Button variant="ghost" className="w-full">Exit to Menu</Button>
+                            </Link>
+                        )}
                     </div>
                 </div>
             )}
