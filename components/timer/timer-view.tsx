@@ -5,6 +5,7 @@ import { useTimerStore, useTaskStore } from "@/lib/store";
 import { TimerCircle } from "./timer-circle";
 import { TimerControls } from "./timer-controls";
 import { WhiteNoisePlayer } from "./white-noise-player";
+import { YouTubePlayer } from "./youtube-player";
 import { BreathingGuide } from "./breathing-guide";
 import { DailyFocus } from "@/components/habits/daily-focus";
 import { SmartGreeting } from "./smart-greeting";
@@ -16,11 +17,13 @@ import { Maximize2, Minimize2, Play, Circle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isToday } from "date-fns";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 export function TimerView() {
     const { timeLeft, isRunning, mode, toggleTimer, resetTimer } = usePomodoroTimer();
     const { settings, focusMode, setFocusMode } = useTimerStore();
     const { activeTaskId, tasks, setActiveTask } = useTaskStore();
+    const [audioMode, setAudioMode] = useState<'noise' | 'youtube'>('noise');
 
     const activeTask = tasks.find(t => t.id === activeTaskId);
     const todayTasks = tasks.filter(t =>
@@ -93,7 +96,36 @@ export function TimerView() {
 
                         {!focusMode && (
                             <div className="w-full space-y-6 flex flex-col items-center">
-                                <WhiteNoisePlayer />
+                                {/* Audio Player Controls */}
+                                <div className="space-y-4 w-full flex flex-col items-center">
+                                    <div className="flex bg-muted/50 p-1 rounded-full gap-1">
+                                        <Button
+                                            variant={audioMode === 'noise' ? 'secondary' : 'ghost'}
+                                            size="sm"
+                                            className="h-7 text-xs rounded-full px-4"
+                                            onClick={() => setAudioMode('noise')}
+                                        >
+                                            Noise
+                                        </Button>
+                                        <Button
+                                            variant={audioMode === 'youtube' ? 'secondary' : 'ghost'}
+                                            size="sm"
+                                            className="h-7 text-xs rounded-full px-4"
+                                            onClick={() => setAudioMode('youtube')}
+                                        >
+                                            YouTube
+                                        </Button>
+                                    </div>
+
+                                    <div className="w-full flex justify-center min-h-[50px]">
+                                        {audioMode === 'noise' ? (
+                                            <WhiteNoisePlayer />
+                                        ) : (
+                                            <YouTubePlayer />
+                                        )}
+                                    </div>
+                                </div>
+
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -129,7 +161,7 @@ export function TimerView() {
 
                         <div className="flex-1 flex flex-col space-y-4">
                             <div className="flex items-center justify-between pb-4 border-b border-border/40">
-                                <h3 className="text-xl font-semibold tracking-tight">Today's Focus</h3>
+                                <h3 className="text-xl font-semibold tracking-tight">Today&apos;s Focus</h3>
                                 <Badge variant="outline" className="font-normal text-muted-foreground">{todayTasks.length} tasks</Badge>
                             </div>
 
