@@ -37,7 +37,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     "flex-1 overflow-y-auto p-4 md:p-8 transition-all",
                     focusMode && "flex items-center justify-center p-0 md:p-0"
                 )}>
-                    <div className={cn("mx-auto max-w-5xl h-full transition-all", focusMode && "w-full max-w-none")}>
+                    <div className={cn("mx-auto max-w-[90%] h-full transition-all", focusMode && "w-full max-w-none")}>
                         {children}
                     </div>
                 </main>

@@ -18,6 +18,7 @@ import { TaskForm } from "./task-form";
 import { TaskItem } from "./task-item";
 import { format, isSameDay, isToday, isTomorrow, isThisWeek } from "date-fns";
 import { cn } from "@/lib/utils";
+import { AITaskCreator } from "./ai-task-creator";
 
 export function TaskList() {
     const { tasks } = useTaskStore();
@@ -134,7 +135,7 @@ export function TaskList() {
                             <SelectItem value="energyLevel">Energy</SelectItem>
                         </SelectContent>
                     </Select>
-
+                    <AITaskCreator />
                     <ProjectManager />
                     <TaskForm />
                 </div>
