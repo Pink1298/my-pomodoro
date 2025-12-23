@@ -119,9 +119,9 @@ export function VisualQuote() {
     }, []);
 
     return (
-        <div className="flex flex-col items-center justify-center p-6 text-center opacity-80 hover:opacity-100 transition-opacity">
-            <Quote className="h-6 w-6 text-muted-foreground mb-2 opacity-50" />
-            <p className="text-sm font-medium text-muted-foreground italic font-serif leading-relaxed max-w-xs">
+        <div className="flex flex-col items-center justify-center p-6 text-center opacity-100 transition-opacity">
+            <Quote className="h-6 w-6 mb-2 opacity-60" />
+            <p className="text-sm font-medium italic font-serif leading-relaxed max-w-xs opacity-100">
                 "{quote}"
             </p>
         </div>

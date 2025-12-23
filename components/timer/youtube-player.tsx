@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Youtube, Link as LinkIcon, ListMusic, Play } from "lucide-react";
+import { Youtube, Link as LinkIcon, ListMusic, Play, Eye, EyeOff } from "lucide-react";
 import {
     Popover,
     PopoverContent,
@@ -28,6 +28,7 @@ export function YouTubePlayer() {
     const [videoId, setVideoId] = useState("jfKfPfyJRdk"); // Default to Lofi Girl
     const [inputValue, setInputValue] = useState("");
     const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
+    const [isVideoVisible, setIsVideoVisible] = useState(true);
 
     // Load from local storage
     useEffect(() => {
@@ -81,7 +82,7 @@ export function YouTubePlayer() {
     };
 
     return (
-        <div className="w-full max-w-sm mx-auto bg-background/50 backdrop-blur-sm rounded-xl border shadow-sm overflow-hidden">
+        <div className="w-full max-w-sm mx-auto bg-background/50 backdrop-blur-sm rounded-xl border shadow-sm overflow-hidden transition-all duration-300">
             {/* Header / Controls */}
             <div className="flex items-center justify-between px-3 py-2 bg-secondary/30 border-b">
                 <div className="flex items-center gap-2">
@@ -90,6 +91,21 @@ export function YouTubePlayer() {
                 </div>
 
                 <div className="flex items-center gap-1">
+                    {/* Visibility Toggle */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        title={isVideoVisible ? "Hide Video" : "Show Video"}
+                        onClick={() => setIsVideoVisible(!isVideoVisible)}
+                    >
+                        {isVideoVisible ? (
+                            <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                        ) : (
+                            <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                        )}
+                    </Button>
+
                     {/* Presets Menu */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -134,7 +150,7 @@ export function YouTubePlayer() {
             </div>
 
             {/* Iframe Player */}
-            <div className="relative w-full h-[180px]"> {/* Increased height slightly for better video ratio */}
+            <div className={`relative w-full transition-all duration-300 ease-in-out ${isVideoVisible ? "h-[180px]" : "h-0"}`}>
                 <iframe
                     src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=0&modestbranding=1&controls=1&rel=0`}
                     title="YouTube video player"

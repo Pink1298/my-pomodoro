@@ -48,129 +48,145 @@ export function TimerView() {
         .padStart(2, "0")}`;
 
     return (
-        <div className={cn("relative transition-all duration-700 w-full h-full flex justify-center p-4 lg:p-12")}>
+        <div className="w-full min-h-[calc(100vh-4rem)] bg-[#FDFCF8] dark:bg-stone-950 text-[#4A4744] dark:text-stone-400 flex items-center justify-center p-4 lg:p-8">
             <BreathingGuide />
 
-            <div className={cn("grid w-full transition-all duration-700 gap-12 lg:gap-24", focusMode ? "grid-cols-1" : "lg:grid-cols-2 max-w-6xl")}>
+            <div className={cn(
+                "w-full transition-all duration-700",
+                focusMode
+                    ? "flex justify-center"
+                    : "grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12"
+            )}>
 
-                {/* TIMER SECTION (LEFT) */}
-                <div className={cn("flex flex-col align-center justify-center space-y-10 transition-all duration-500",
-                    focusMode && "scale-110"
+                {/* --- LEFT COLUMN: TIMER & AUDIO --- */}
+                <div className={cn(
+                    "flex flex-col gap-8 transition-all duration-500 order-1",
+                    focusMode ? "lg:w-auto scale-110" : "lg:col-span-7 justify-between"
                 )}>
-                    {/* Header */}
-                    <div className={cn("text-center space-y-4 transition-all duration-500", focusMode && isRunning ? "opacity-0 scale-95 h-0 overflow-hidden" : "opacity-100")}>
-                        {!focusMode && <SmartGreeting />}
-                        <motion.div layoutId="timer-status" className="space-y-2">
-                            <h1 className="text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/50">
-                                {mode === 'pomodoro' ? 'Focus' : 'Breathe'}
-                            </h1>
-                            <p className="text-muted-foreground text-lg">
-                                {mode === 'pomodoro' ? 'One thing at a time' : 'Recharge your mind'}
-                            </p>
-                        </motion.div>
-                        <div className="h-8 flex justify-center">
-                            {activeTask && mode === 'pomodoro' && (
-                                <Badge variant="secondary" className="text-sm py-1.5 px-4 rounded-full">
-                                    Working on: {activeTask.title}
-                                </Badge>
-                            )}
-                        </div>
-                    </div>
 
-                    <TimerCircle timeLeft={timeLeft} totalTime={totalTime} mode={mode}>
-                        <div className="flex flex-col items-center">
-                            <div className="text-7xl lg:text-7xl font-bold font-mono tracking-tighter tabular-nums text-foreground select-none">
-                                {formattedTime}
+                    {/* Timer Card */}
+                    <div className="flex flex-col items-center justify-center py-12 px-6 rounded-[3rem] bg-white dark:bg-stone-900 shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-[#F0EFEB] dark:border-stone-800">
+                        <div className={cn("text-center space-y-2 mb-8 transition-all duration-500", focusMode && isRunning ? "opacity-0 h-0 overflow-hidden" : "opacity-100")}>
+                            {!focusMode && <SmartGreeting />}
+                            <motion.div layoutId="timer-status" className="space-y-1">
+                                <h1 className="text-3xl font-light tracking-wide text-[#2D2A26] dark:text-stone-200">
+                                    {mode === 'pomodoro' ? 'Focus Session' : 'Rest & Recharge'}
+                                </h1>
+                                <p className="text-[#8C8884] dark:text-stone-500 text-sm font-light">
+                                    {mode === 'pomodoro' ? 'Immerse yourself in the flow.' : 'Take a moment to breathe.'}
+                                </p>
+                            </motion.div>
+                            <div className="h-6 flex justify-center mt-2">
+                                {activeTask && mode === 'pomodoro' && (
+                                    <div className="flex items-center gap-2 px-3 py-1 bg-[#F5E6D3] dark:bg-stone-800 rounded-full text-[#5C4D3C] dark:text-stone-300 text-xs font-medium">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#9A3412] dark:bg-orange-400" />
+                                        {activeTask.title}
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    </TimerCircle>
 
-                    <div className="flex flex-col items-center gap-8 w-full  z-10">
-                        <TimerControls
-                            isRunning={isRunning}
-                            onToggle={toggleTimer}
-                            onReset={resetTimer}
-                            showSkip={mode !== 'pomodoro'}
-                            onSkip={() => useTimerStore.getState().setMode('pomodoro')}
-                        />
-
-                        {!focusMode && (
-                            <div className="w-full space-y-6 flex flex-col items-center">
-                                {/* Audio Player Controls */}
-                                <div className="space-y-4 w-full flex flex-col items-center">
-                                    <div className="flex bg-muted/50 p-1 rounded-full gap-1">
-                                        <Button
-                                            variant={audioMode === 'noise' ? 'secondary' : 'ghost'}
-                                            size="sm"
-                                            className="h-7 text-xs rounded-full px-4"
-                                            onClick={() => setAudioMode('noise')}
-                                        >
-                                            Noise
-                                        </Button>
-                                        <Button
-                                            variant={audioMode === 'youtube' ? 'secondary' : 'ghost'}
-                                            size="sm"
-                                            className="h-7 text-xs rounded-full px-4"
-                                            onClick={() => setAudioMode('youtube')}
-                                        >
-                                            YouTube
-                                        </Button>
+                        <div className="relative">
+                            <TimerCircle timeLeft={timeLeft} totalTime={totalTime} mode={mode}>
+                                <div className="flex flex-col items-center">
+                                    <div className="text-7xl font-light tracking-tighter text-[#2D2A26] dark:text-stone-200 tabular-nums select-none">
+                                        {formattedTime}
                                     </div>
-
-                                    <div className="w-full flex justify-center min-h-[50px]">
-                                        {audioMode === 'noise' ? (
-                                            <WhiteNoisePlayer />
-                                        ) : (
-                                            <YouTubePlayer />
-                                        )}
-                                    </div>
+                                    <p className="text-xs font-medium tracking-widest uppercase text-[#8C8884] dark:text-stone-600 mt-2">
+                                        {isRunning ? 'Running' : 'Paused'}
+                                    </p>
                                 </div>
+                            </TimerCircle>
+                        </div>
 
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="rounded-full text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                                    onClick={() => setFocusMode(!focusMode)}
-                                >
-                                    <Maximize2 className="h-3 w-3 mr-2" />
-                                    Enter Focus Mode
-                                </Button>
-                            </div>
-                        )}
-
-                        {focusMode && (
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                className="rounded-full text-xs"
-                                onClick={() => setFocusMode(!focusMode)}
-                            >
-                                <Minimize2 className="h-3 w-3 mr-2" />
-                                Exit Focus Mode
-                            </Button>
-                        )}
+                        <div className="mt-10 w-full flex justify-center">
+                            <TimerControls
+                                isRunning={isRunning}
+                                onToggle={toggleTimer}
+                                onReset={resetTimer}
+                                showSkip={mode !== 'pomodoro'}
+                                onSkip={() => useTimerStore.getState().setMode('pomodoro')}
+                            />
+                        </div>
                     </div>
-                    <VisualQuote />
 
+                    {/* Soundscape "Mini Player" */}
+                    <div className={cn(
+                        "bg-white dark:bg-stone-900 rounded-3xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.02)] border border-[#F0EFEB] dark:border-stone-800 flex flex-col gap-4",
+                        focusMode && "hidden"
+                    )}>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-[#4A4744] dark:text-stone-400">
+                                <div className="p-2 bg-[#F2F0ED] dark:bg-stone-800 rounded-xl">
+                                    {audioMode === 'noise' ? <div className="h-4 w-4 bg-[#8C8884] rounded-full opacity-50" /> : <Play className="h-4 w-4 text-[#8C8884]" />}
+                                </div>
+                                <span className="text-sm font-medium tracking-wide">Soundscape</span>
+                            </div>
+
+                            <div className="flex bg-[#F2F0ED] dark:bg-stone-800 p-1 rounded-full">
+                                <button
+                                    onClick={() => setAudioMode('noise')}
+                                    className={cn(
+                                        "px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300",
+                                        audioMode === 'noise' ? "bg-white dark:bg-stone-700 shadow-sm text-[#2D2A26] dark:text-stone-200" : "text-[#8C8884] dark:text-stone-500 hover:text-[#4A4744] dark:hover:text-stone-300"
+                                    )}
+                                >
+                                    Noise
+                                </button>
+                                <button
+                                    onClick={() => setAudioMode('youtube')}
+                                    className={cn(
+                                        "px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300",
+                                        audioMode === 'youtube' ? "bg-white dark:bg-stone-700 shadow-sm text-[#2D2A26] dark:text-stone-200" : "text-[#8C8884] dark:text-stone-500 hover:text-[#4A4744] dark:hover:text-stone-300"
+                                    )}
+                                >
+                                    YouTube
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-[#FDFCF8] dark:bg-stone-950 rounded-2xl overflow-hidden border border-[#F0EFEB] dark:border-stone-800">
+                            {audioMode === 'noise' ? <WhiteNoisePlayer /> : <YouTubePlayer />}
+                        </div>
+                    </div>
                 </div>
 
-                {/* TASKS SECTION (RIGHT) */}
-                {!focusMode && (
-                    <div className="hidden lg:flex flex-col gap-6 h-[600px] animate-in slide-in-from-right-8 fade-in duration-700">
-                        <DailyFocus />
 
-                        <div className="flex-1 flex flex-col space-y-4">
-                            <div className="flex items-center justify-between pb-4 border-b border-border/40">
-                                <h3 className="text-xl font-semibold tracking-tight">Today&apos;s Focus</h3>
-                                <Badge variant="outline" className="font-normal text-muted-foreground">{todayTasks.length} tasks</Badge>
+                {/* --- RIGHT COLUMN: TASKS & QUOTES --- */}
+                {!focusMode && (
+                    <div className="lg:col-span-5 flex flex-col gap-6 order-2 animate-in fade-in slide-in-from-right-4 duration-700">
+                        {/* Quote Card */}
+                        <div className="bg-primary text-primary-foreground rounded-3xl p-6 shadow-md relative overflow-hidden transition-colors duration-500">
+                            <div className="absolute top-0 right-0 p-8 opacity-10">
+                                <Maximize2 className="h-32 w-32" />
+                            </div>
+                            <VisualQuote />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setFocusMode(true)}
+                                className="mt-4 text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 rounded-full text-xs border border-primary-foreground/20"
+                            >
+                                <Maximize2 className="h-3 w-3 mr-2" />
+                                Enter Zen Mode
+                            </Button>
+                        </div>
+
+                        {/* Task List */}
+                        <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.02)] border border-[#F0EFEB] dark:border-stone-800 flex-1 min-h-[400px] flex flex-col">
+                            <DailyFocus />
+
+                            <div className="mt-6 flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-medium text-[#2D2A26] dark:text-stone-200">Today's Priorities</h3>
+                                <span className="text-xs font-medium text-[#8C8884] dark:text-stone-500 bg-[#F2F0ED] dark:bg-stone-800 px-2 py-1 rounded-md">{todayTasks.length}</span>
                             </div>
 
-                            <ScrollArea className="flex-1 -mr-4 pr-4">
-                                <div className="space-y-4">
+                            <ScrollArea className="flex-1 -mr-2 pr-2">
+                                <div className="space-y-3">
                                     {todayTasks.length === 0 ? (
-                                        <div className="h-full flex flex-col items-center justify-center text-muted-foreground/50 py-20 gap-4">
-                                            <CheckCircle2 className="h-12 w-12 opacity-20" />
-                                            <p className="font-medium">All clear for today</p>
+                                        <div className="flex flex-col items-center justify-center h-48 text-[#8C8884] opacity-60">
+                                            <CheckCircle2 className="h-8 w-8 mb-2" />
+                                            <p className="text-sm">All cleared. Enjoy the calm.</p>
                                         </div>
                                     ) : (
                                         todayTasks.map(task => (
@@ -179,41 +195,37 @@ export function TimerView() {
                                                 key={task.id}
                                                 onClick={() => setActiveTask(task.id)}
                                                 className={cn(
-                                                    "group flex items-center p-3 rounded-lg transition-all cursor-pointer",
-                                                    activeTaskId === task.id ? "bg-primary/5" : "hover:bg-muted/40"
+                                                    "group flex items-start p-3 rounded-2xl transition-all cursor-pointer border border-transparent",
+                                                    activeTaskId === task.id
+                                                        ? "bg-[#FDFCF8] dark:bg-stone-800 border-[#E6E4E0] dark:border-stone-700 shadow-sm"
+                                                        : "hover:bg-[#F9F8F6] dark:hover:bg-stone-800/50"
                                                 )}
                                             >
+                                                <div className={cn(
+                                                    "mt-1 w-2 h-2 rounded-full mr-3 shrink-0",
+                                                    task.priority === 'high' ? "bg-[#EF5350]" :
+                                                        task.priority === 'normal' ? "bg-[#FFB74D]" : "bg-[#9CCC65]"
+                                                )} />
+
                                                 <div className="flex-1 min-w-0">
-                                                    <p className={cn("text-base font-medium truncate", activeTaskId === task.id && "text-primary")}>
+                                                    <p className={cn(
+                                                        "text-sm font-medium truncate transition-colors",
+                                                        activeTaskId === task.id ? "text-[#2D2A26] dark:text-stone-200" : "text-[#5D5A56] dark:text-stone-400"
+                                                    )}>
                                                         {task.title}
                                                     </p>
-                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground/60 mt-1">
-                                                        <span className={cn(
-                                                            "w-1.5 h-1.5 rounded-full",
-                                                            task.priority === 'high' ? "bg-red-400" :
-                                                                task.priority === 'normal' ? "bg-blue-400" :
-                                                                    "bg-slate-400"
-                                                        )} />
-                                                        <span className="capitalize">{task.priority}</span>
-                                                        <span>•</span>
+                                                    <div className="flex items-center gap-2 text-[10px] text-[#8C8884] dark:text-stone-500 mt-1">
+                                                        <span className="bg-[#F2F0ED] dark:bg-stone-800 px-1.5 py-0.5 rounded-md capitalize">{task.priority}</span>
                                                         <span>{task.completedPomodoros}/{task.estimatedPomodoros} pomos</span>
                                                     </div>
                                                 </div>
 
-                                                {activeTaskId === task.id ? (
+                                                {activeTaskId === task.id && (
                                                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                                                        <Badge variant="default" className="ml-2 h-6 w-6 p-0 flex items-center justify-center rounded-full shadow-sm">
-                                                            <Play className="h-3 w-3 fill-current ml-0.5" />
-                                                        </Badge>
+                                                        <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
+                                                            <Play className="h-2.5 w-2.5 ml-0.5 fill-current" />
+                                                        </div>
                                                     </motion.div>
-                                                ) : (
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        className="ml-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-all rounded-full hover:bg-primary/10 hover:text-primary"
-                                                    >
-                                                        <Play className="h-4 w-4 fill-current ml-0.5" />
-                                                    </Button>
                                                 )}
                                             </motion.div>
                                         ))
@@ -222,6 +234,24 @@ export function TimerView() {
                             </ScrollArea>
                         </div>
                     </div>
+                )}
+
+                {/* Focus Mode Exit Button (Floating) */}
+                {focusMode && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="fixed bottom-8 left-1/2 -translate-x-1/2"
+                    >
+                        <Button
+                            variant="secondary"
+                            onClick={() => setFocusMode(false)}
+                            className="rounded-full shadow-lg bg-white/90 dark:bg-stone-800/90 backdrop-blur hover:bg-white dark:hover:bg-stone-800 text-[#4A4744] dark:text-stone-200 px-6"
+                        >
+                            <Minimize2 className="h-4 w-4 mr-2" />
+                            Exit Focus
+                        </Button>
+                    </motion.div>
                 )}
             </div>
         </div>

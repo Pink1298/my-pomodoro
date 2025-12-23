@@ -32,27 +32,29 @@ export function TimerCircle({ timeLeft, totalTime, mode, children }: TimerCircle
                 <circle
                     stroke="currentColor"
                     fill="transparent"
-                    strokeWidth={stroke}
+                    strokeWidth={4}
                     r={normalizedRadius}
                     cx={radius}
                     cy={radius}
-                    className="text-muted-foreground/20"
+                    className="text-[#E0E0DC] dark:text-stone-800" // Light warm gray for track
                 />
                 {/* Progress Circle */}
                 <motion.circle
                     stroke="currentColor"
                     fill="transparent"
-                    strokeWidth={stroke}
+                    strokeWidth={4}
                     strokeLinecap="round"
                     r={normalizedRadius}
                     cx={radius}
                     cy={radius}
                     className={cn(
-                        "transition-all duration-1000 ease-linear text-primary"
+                        "transition-all duration-1000 ease-linear text-primary",
+                        mode !== 'pomodoro' && "opacity-80"
                     )}
                     style={{
                         strokeDasharray: `${circumference} ${circumference}`,
                         strokeDashoffset,
+                        filter: "drop-shadow(0px 0px 4px hsl(var(--primary) / 0.3))" // Soft glow using theme color
                     }}
                     initial={{ strokeDashoffset: circumference }}
                     animate={{ strokeDashoffset }}
