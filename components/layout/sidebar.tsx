@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Timer, CheckSquare, BarChart2, Settings, Coffee, Calendar } from "lucide-react";
+import { Timer, CheckSquare, BarChart2, Settings, Coffee, Calendar, Gamepad2 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { StreakIndicator } from "@/components/habits/streak-indicator";
 import AuthButton from "@/components/auth/auth-button";
@@ -38,6 +38,12 @@ export function Sidebar({ className }: SidebarProps) {
             icon: BarChart2,
             href: "/stats",
             active: pathname === "/stats",
+        },
+        {
+            label: "Brain Training",
+            icon: Gamepad2,
+            href: "/games",
+            active: pathname.startsWith("/games"),
         },
         {
             label: "Settings",
