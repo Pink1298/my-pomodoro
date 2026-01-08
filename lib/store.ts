@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { PomodoroSettings, Task, TimerMode, Session, TimeBlock, Project, Subtask } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
 
 interface TimerState {
     timeLeft: number; // in seconds
@@ -90,6 +91,7 @@ interface TaskState {
     setActiveTask: (id: string | null) => void;
     incrementTaskPomodoro: (id: string) => void;
     setTasks: (tasks: Task[]) => void;
+    reorderTasks: (newTasks: Task[]) => void;
 
     // Subtasks
     addSubtask: (taskId: string, title: string) => void;
@@ -119,10 +121,9 @@ export const useTaskStore = create<TaskState>()(
             addTask: (taskData) =>
                 set((state) => ({
                     tasks: [
-                        ...state.tasks,
                         {
                             ...taskData,
-                            id: crypto.randomUUID(),
+                            id: uuidv4(),
                             createdAt: Date.now(),
                             completedPomodoros: 0,
                             subtasks: [],
@@ -131,6 +132,7 @@ export const useTaskStore = create<TaskState>()(
                             projectId: taskData.projectId || 'default',
                             energyLevel: taskData.energyLevel || 'medium',
                         },
+                        ...state.tasks,
                     ],
                 })),
             updateTask: (id, updates) =>
@@ -160,13 +162,14 @@ export const useTaskStore = create<TaskState>()(
                     ),
                 })),
             setTasks: (tasks) => set({ tasks }),
+            reorderTasks: (newTasks) => set({ tasks: newTasks }),
 
             // Subtasks
             addSubtask: (taskId, title) =>
                 set((state) => ({
                     tasks: state.tasks.map(t =>
                         t.id === taskId
-                            ? { ...t, subtasks: [...(t.subtasks || []), { id: crypto.randomUUID(), title, completed: false }] }
+                            ? { ...t, subtasks: [...(t.subtasks || []), { id: uuidv4(), title, completed: false }] }
                             : t
                     )
                 })),
@@ -193,7 +196,7 @@ export const useTaskStore = create<TaskState>()(
             // Projects
             addProject: (project) =>
                 set((state) => ({
-                    projects: [...state.projects, { ...project, id: crypto.randomUUID() }]
+                    projects: [...state.projects, { ...project, id: uuidv4() }]
                 })),
             deleteProject: (id) => {
                 // Determine what to do with tasks in deleted project - move to default?
@@ -276,7 +279,7 @@ export const useStatsStore = create<StatsState>()(
                 set((state) => ({
                     sessions: [
                         ...state.sessions,
-                        { ...session, id: crypto.randomUUID() },
+                        { ...session, id: uuidv4() },
                     ],
                     lastFocusDate: today,
                     dailyStreak: newStreak
@@ -339,7 +342,7 @@ export const useScheduleStore = create<ScheduleState>()(
         (set) => ({
             blocks: [],
             addBlock: (block) => set((state) => ({
-                blocks: [...state.blocks, { ...block, id: crypto.randomUUID() }]
+                blocks: [...state.blocks, { ...block, id: uuidv4() }]
             })),
             removeBlock: (id) => set((state) => ({
                 blocks: state.blocks.filter((b) => b.id !== id)

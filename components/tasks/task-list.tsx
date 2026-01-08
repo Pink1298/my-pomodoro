@@ -19,10 +19,26 @@ import { TaskItem } from "./task-item";
 import { format, isSameDay, isToday, isTomorrow, isThisWeek } from "date-fns";
 import { cn } from "@/lib/utils";
 import { AITaskCreator } from "./ai-task-creator";
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { SortableTaskItem } from "./sortable-task-item";
 
 export function TaskList() {
-    const { tasks } = useTaskStore();
-    const [sortBy, setSortBy] = useState<"createdAt" | "priority" | "energyLevel">("createdAt");
+    const { tasks, reorderTasks } = useTaskStore(state => state);
+    const [sortBy, setSortBy] = useState<"createdAt" | "priority" | "energyLevel" | "manual">("manual");
     const [filterType, setFilterType] = useState<"all" | "today" | "tomorrow" | "week" | "custom">("all");
     const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
 
@@ -30,19 +46,21 @@ export function TaskList() {
         let filtered = tasks;
 
         if (filterType === 'today') {
-            filtered = tasks.filter(t => t.dueDate && isToday(new Date(t.dueDate)));
+            filtered = tasks.filter((t) => t.dueDate && isToday(new Date(t.dueDate)));
         } else if (filterType === 'tomorrow') {
-            filtered = tasks.filter(t => t.dueDate && isTomorrow(new Date(t.dueDate)));
+            filtered = tasks.filter((t) => t.dueDate && isTomorrow(new Date(t.dueDate)));
         } else if (filterType === 'week') {
-            filtered = tasks.filter(t => t.dueDate && isThisWeek(new Date(t.dueDate)));
+            filtered = tasks.filter((t) => t.dueDate && isThisWeek(new Date(t.dueDate)));
         } else if (filterType === 'custom' && customDate) {
-            filtered = tasks.filter(t => t.dueDate && isSameDay(new Date(t.dueDate), customDate));
+            filtered = tasks.filter((t) => t.dueDate && isSameDay(new Date(t.dueDate), customDate));
         }
 
         return filtered;
     };
 
     const sortTasks = (tasks: any[]) => {
+        if (sortBy === 'manual') return tasks;
+
         return [...tasks].sort((a, b) => {
             if (sortBy === 'priority') {
                 const priorityWeight: any = { high: 3, normal: 2, low: 1 };
@@ -58,6 +76,26 @@ export function TaskList() {
             return b.createdAt - a.createdAt;
         });
     };
+
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    function handleDragEnd(event: DragEndEvent) {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            const oldIndex = tasks.findIndex((t: any) => t.id === active.id);
+            const newIndex = tasks.findIndex((t: any) => t.id === over.id);
+
+            if (oldIndex !== -1 && newIndex !== -1) {
+                reorderTasks(arrayMove(tasks, oldIndex, newIndex));
+            }
+        }
+    }
 
     const filteredTasks = getFilteredTasks();
     const sortedTasks = sortTasks(filteredTasks);
@@ -130,6 +168,7 @@ export function TaskList() {
                             <SelectValue placeholder="Sort by" />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="manual">Manual</SelectItem>
                             <SelectItem value="createdAt">Newest</SelectItem>
                             <SelectItem value="priority">Priority</SelectItem>
                             <SelectItem value="energyLevel">Energy</SelectItem>
@@ -157,9 +196,26 @@ export function TaskList() {
                     </div>
                 )}
 
-                {todoTasks.map((task) => (
-                    <TaskItem key={task.id} task={task} />
-                ))}
+                {/* Todo Tasks */}
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                >
+                    <SortableContext
+                        items={todoTasks.map(t => t.id)}
+                        strategy={verticalListSortingStrategy}
+                        disabled={sortBy !== 'manual'}
+                    >
+                        {todoTasks.map((task) => (
+                            sortBy === 'manual' ? (
+                                <SortableTaskItem key={task.id} task={task} />
+                            ) : (
+                                <TaskItem key={task.id} task={task} />
+                            )
+                        ))}
+                    </SortableContext>
+                </DndContext>
 
                 {doneTasks.length > 0 && (
                     <>

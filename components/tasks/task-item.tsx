@@ -12,7 +12,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, PlayCircle, Folder, ChevronDown, ChevronRight, Plus, Copy, Edit, CalendarIcon } from "lucide-react";
+import { MoreVertical, Trash2, PlayCircle, Folder, ChevronDown, ChevronRight, Plus, Copy, Edit, CalendarIcon, GripVertical } from "lucide-react";
 import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,8 @@ import { format, isPast, isToday, isTomorrow } from "date-fns";
 
 interface TaskItemProps {
     task: Task;
+    dragAttributes?: any;
+    dragListeners?: any;
 }
 
 const PriorityColor = {
@@ -29,7 +31,7 @@ const PriorityColor = {
     high: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
 };
 
-export function TaskItem({ task }: TaskItemProps) {
+export function TaskItem({ task, dragAttributes, dragListeners }: TaskItemProps) {
     const { toggleTaskStatus, deleteTask, setActiveTask, activeTaskId, projects, addSubtask, toggleSubtask, deleteSubtask, addTask } = useTaskStore<any>(state => state);
     const [isOpen, setIsOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -98,6 +100,15 @@ export function TaskItem({ task }: TaskItemProps) {
             >
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 flex-1">
+                        {dragListeners && (
+                            <div
+                                {...dragAttributes}
+                                {...dragListeners}
+                                className="mt-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+                            >
+                                <GripVertical className="h-5 w-5" />
+                            </div>
+                        )}
                         <button
                             onClick={handleToggle}
                             className={cn(
